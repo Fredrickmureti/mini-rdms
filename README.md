@@ -2,11 +2,16 @@
 
 A **simple relational database management system** built from scratch in Node.js. This project is designed for **learning purposes**, demonstrating core database concepts like tables, columns, CRUD operations, indexing, constraints, and SQL parsing.
 
+<p align="center">
+  <img src="Public/gui_images/Task_Manager.png" alt="Task Manager Demo" width="700"/>
+</p>
+
 ---
 
 ## 📚 Table of Contents
 
 - [Overview](#overview)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
@@ -53,6 +58,39 @@ This mini-RDBMS implements fundamental database concepts:
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 📸 Screenshots
+
+### Web Interface - Task Manager
+A full-featured task management application demonstrating CRUD operations.
+
+<p align="center">
+  <img src="Public/gui_images/Task_Manager.png" alt="Task Manager" width="700"/>
+</p>
+
+### SQL Console - Query Execution
+Execute SQL queries directly in the browser with MySQL-style formatted output.
+
+<p align="center">
+  <img src="Public/gui_images/SQL_CONSOLE1.png" alt="SQL Console" width="700"/>
+</p>
+
+<p align="center">
+  <img src="Public/gui_images/SQL_CONSOLE2.png" alt="SQL Console Results" width="700"/>
+</p>
+
+### Interactive REPL - Terminal Interface
+Command-line interface for direct database interaction.
+
+<p align="center">
+  <img src="Public/terminal_images/Terminal_1.png" alt="REPL Terminal" width="700"/>
+</p>
+
+<p align="center">
+  <img src="Public/terminal_images/Terminal2.png" alt="REPL Commands" width="700"/>
+</p>
 
 ---
 
