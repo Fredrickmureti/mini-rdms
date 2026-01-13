@@ -521,8 +521,28 @@ If you're using this project to learn, here's a suggested order:
 Feel free to extend this project! Some ideas:
 - Add more data types (FLOAT, DATE, etc.)
 - Implement more SQL features (ORDER BY, GROUP BY, LIMIT)
-- Add persistence (save to disk)
+- Add persistence (save to disk) ✅ *Implemented*
 - Implement transactions
 - Add more join types (LEFT, RIGHT, OUTER)
 
+---
 
+## 🙏 Acknowledgments
+
+This project was built with the assistance of:
+- **AI Tools (GitHub Copilot)** - Used for code suggestions, refactoring, and debugging assistance
+- **Node.js Documentation** - For API references
+- **Database Systems Concepts** - Inspired by Silberschatz, Korth & Sudarshan's textbook
+
+The architecture, design decisions, and implementation logic are my own work. AI was used as a development tool to accelerate coding and help with syntax, similar to how one might use Stack Overflow or documentation.
+
+---
+
+## 📄 License
+
+MIT License - Feel free to use this project for learning!
+
+---
+
+**Author:** [Fredrick Mureti](https://mureti.dev)  
+**Repository:** [github.com/Fredrickmureti/mini-rdms](https://github.com/Fredrickmureti/mini-rdms)
