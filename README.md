@@ -358,6 +358,18 @@ DROP TABLE table_name;
 
 Base URL: `http://localhost:3000/api`
 
+### Database Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/databases` | List all databases |
+| POST | `/databases` | Create a new database |
+| POST | `/databases/use` | Switch to a database |
+| DELETE | `/databases/:name` | Drop a database |
+| GET | `/databases/current` | Get current database info |
+
+### Table Endpoints
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/tables` | List all tables |
@@ -367,11 +379,39 @@ Base URL: `http://localhost:3000/api`
 | POST | `/tables/:name/rows` | Insert a row |
 | PUT | `/tables/:name/rows` | Update rows |
 | DELETE | `/tables/:name/rows` | Delete rows |
+
+### Query Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | POST | `/query` | Execute raw SQL |
+| GET | `/stats` | Get database statistics |
 
 ### Example API Usage
 
 ```bash
+# List databases
+curl http://localhost:3000/api/databases
+
+# Create a database via SQL
+curl -X POST http://localhost:3000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{"sql": "CREATE DATABASE myapp"}'
+
+# Switch database via SQL
+curl -X POST http://localhost:3000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{"sql": "USE myapp"}'
+
+# Or use the dedicated endpoints
+curl -X POST http://localhost:3000/api/databases \
+  -H "Content-Type: application/json" \
+  -d '{"name": "myapp"}'
+
+curl -X POST http://localhost:3000/api/databases/use \
+  -H "Content-Type: application/json" \
+  -d '{"name": "myapp"}'
+
 # Create table
 curl -X POST http://localhost:3000/api/tables \
   -H "Content-Type: application/json" \

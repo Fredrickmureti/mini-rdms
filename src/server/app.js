@@ -16,6 +16,14 @@
  * 
  * API ENDPOINTS:
  * --------------
+ * Database Management:
+ * GET    /api/databases            - List all databases
+ * POST   /api/databases            - Create a new database
+ * POST   /api/databases/use        - Switch to a database
+ * DELETE /api/databases/:name      - Drop a database
+ * GET    /api/databases/current    - Get current database info
+ * 
+ * Table Management:
  * GET    /api/tables              - List all tables
  * POST   /api/tables              - Create a new table
  * DELETE /api/tables/:name        - Drop a table
@@ -23,6 +31,8 @@
  * POST   /api/tables/:name/rows   - Insert a row
  * PUT    /api/tables/:name/rows   - Update rows
  * DELETE /api/tables/:name/rows   - Delete rows
+ * 
+ * Query Execution:
  * POST   /api/query               - Execute raw SQL
  * GET    /api/stats               - Get database statistics
  * 
@@ -31,8 +41,12 @@
  * $ npm run server
  * Server running on http://localhost:3000
  * 
- * $ curl http://localhost:3000/api/tables
- * ["users", "posts"]
+ * $ curl http://localhost:3000/api/databases
+ * {"success":true,"data":["app_db"]}
+ * 
+ * $ curl -X POST http://localhost:3000/api/query \
+ *   -H "Content-Type: application/json" \
+ *   -d '{"sql": "CREATE DATABASE myapp"}'
  * 
  * =============================================================================
  */
@@ -41,7 +55,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-const Database = require('../database');
+const DatabaseManager = require('../DatabaseManager');
 const QueryEngine = require('../engine/QueryEngine');
 
 // =========================================================================
@@ -51,9 +65,9 @@ const QueryEngine = require('../engine/QueryEngine');
 // Create Express app
 const app = express();
 
-// Create database and query engine
-const database = new Database('app_db');
-const engine = new QueryEngine(database);
+// Create DatabaseManager and query engine (with a default 'app_db' database)
+const manager = new DatabaseManager({ defaultDatabase: 'app_db', createDefault: true });
+const engine = new QueryEngine(manager);
 
 // Middleware
 app.use(cors());                          // Enable CORS for frontend access
@@ -68,7 +82,163 @@ app.use((req, res, next) => {
 });
 
 // =========================================================================
-// API ROUTES
+// DATABASE MANAGEMENT API ROUTES
+// =========================================================================
+
+/**
+ * GET /api/databases
+ * 
+ * Lists all databases
+ * 
+ * Response: { success: true, data: ['app_db', 'mydb', ...] }
+ */
+app.get('/api/databases', (req, res) => {
+    try {
+        const databases = manager.listDatabases();
+        res.json({
+            success: true,
+            data: databases,
+            currentDatabase: manager.getCurrentDatabaseName()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/databases
+ * 
+ * Creates a new database
+ * 
+ * Request Body: { "name": "mydb" }
+ * 
+ * Response: { success: true, message: "Database created" }
+ */
+app.post('/api/databases', (req, res) => {
+    try {
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                error: 'Request must include "name" property'
+            });
+        }
+
+        const result = engine.execute(`CREATE DATABASE ${name}`);
+        
+        if (result.success) {
+            res.status(201).json(result);
+        } else {
+            res.status(400).json(result);
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/databases/use
+ * 
+ * Switches to a database
+ * 
+ * Request Body: { "name": "mydb" }
+ * 
+ * Response: { success: true, message: "Database changed to 'mydb'" }
+ */
+app.post('/api/databases/use', (req, res) => {
+    try {
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                error: 'Request must include "name" property'
+            });
+        }
+
+        const result = engine.execute(`USE ${name}`);
+        
+        if (result.success) {
+            res.json(result);
+        } else {
+            res.status(400).json(result);
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * DELETE /api/databases/:name
+ * 
+ * Drops a database
+ * 
+ * Response: { success: true, message: "Database dropped" }
+ */
+app.delete('/api/databases/:name', (req, res) => {
+    try {
+        const { name } = req.params;
+        const result = engine.execute(`DROP DATABASE IF EXISTS ${name}`);
+
+        if (result.success) {
+            res.json(result);
+        } else {
+            res.status(404).json(result);
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/databases/current
+ * 
+ * Gets the current database info
+ * 
+ * Response: { success: true, data: { name: 'app_db', tables: [...] } }
+ */
+app.get('/api/databases/current', (req, res) => {
+    try {
+        const currentDb = manager.getCurrentDatabase();
+        
+        if (!currentDb) {
+            return res.status(400).json({
+                success: false,
+                error: 'No database selected. Use POST /api/databases/use first.'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                name: currentDb.name,
+                tables: currentDb.listTables(),
+                stats: currentDb.getStats()
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// =========================================================================
+// TABLE API ROUTES
 // =========================================================================
 
 /**
@@ -496,6 +666,10 @@ function startServer() {
 ║                                                               ║
 ║   Available endpoints:                                        ║
 ║   GET    /api/tables              - List tables               ║
+║   GET    /api/databases           - List databases            ║
+║   POST   /api/databases           - Create database           ║
+║   POST   /api/databases/use       - Switch database           ║
+║   GET    /api/tables              - List tables               ║
 ║   POST   /api/tables              - Create table              ║
 ║   GET    /api/tables/:name/rows   - Get rows                  ║
 ║   POST   /api/tables/:name/rows   - Insert row                ║
@@ -511,7 +685,7 @@ function startServer() {
 }
 
 // Export for testing and external use
-module.exports = { app, database, engine, startServer };
+module.exports = { app, manager, engine, startServer };
 
 // Start server if run directly
 if (require.main === module) {
