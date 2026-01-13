@@ -12,6 +12,10 @@
         <header class="header">
             <h1>📋 Task Manager</h1>
             <p class="subtitle">A demo application powered by Mini-RDBMS</p>
+            <nav class="quick-nav">
+                <a href="#task-form" class="nav-btn">➕ Add Task</a>
+                <a href="#sql-console" class="nav-btn">🔧 SQL Console</a>
+            </nav>
         </header>
 
         <!-- Add Task Form -->
@@ -71,7 +75,7 @@
         </section>
 
         <!-- SQL Console (for learning/debugging) -->
-        <section class="card console-section">
+        <section id="sql-console" class="card console-section">
             <h2>🔧 SQL Console</h2>
             <p class="console-description">
                 Execute raw SQL queries against the database to see how Mini-RDBMS works!
@@ -96,11 +100,27 @@
                 <strong>Mini-RDBMS</strong> - 
                 A learning project for understanding database concepts
             </p>
+            <p class="footer-author">
+                Created by <a href="https://mureti.dev" target="_blank">Fredrick Mureti</a>
+            </p>
             <p class="footer-links">
-                <a href="https://github.com" target="_blank">View Source</a> •
-                <a href="/api/tables" target="_blank">API Endpoint</a>
+                <a href="https://github.com/Fredrickmureti/mini-rdms" target="_blank">📂 GitHub Repo</a> •
+                <a href="/api/tables" target="_blank">🔌 API Endpoint</a>
             </p>
         </footer>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon">⚠️</div>
+            <h3 class="modal-title">Delete Task?</h3>
+            <p class="modal-message">Are you sure you want to delete this task? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="modal-confirm" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

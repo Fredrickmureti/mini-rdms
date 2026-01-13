@@ -219,33 +219,75 @@ async function handleToggleTask(id, currentStatus) {
 }
 
 /**
- * Handles deleting a task
+ * Handles deleting a task - shows custom confirmation modal
  */
 async function handleDeleteTask(id) {
-    if (!confirm('Are you sure you want to delete this task?')) {
-        return;
-    }
+    showConfirmModal(
+        'Delete Task?',
+        'Are you sure you want to delete this task? This action cannot be undone.',
+        async () => {
+            try {
+                const response = await fetch(`${API_URL}/tables/tasks/rows`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        where: { column: 'id', operator: '=', value: id }
+                    })
+                });
 
-    try {
-        const response = await fetch(`${API_URL}/tables/tasks/rows`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                where: { column: 'id', operator: '=', value: id }
-            })
-        });
+                const result = await response.json();
 
-        const result = await response.json();
-
-        if (result.success) {
-            await loadTasks();
-        } else {
-            showError(result.error);
+                if (result.success) {
+                    await loadTasks();
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                console.error('❌ Failed to delete task:', error);
+                showError('Failed to delete task');
+            }
         }
-    } catch (error) {
-        console.error('❌ Failed to delete task:', error);
-        showError('Failed to delete task');
-    }
+    );
+}
+
+/**
+ * Shows a custom confirmation modal
+ * @param {string} title - Modal title
+ * @param {string} message - Modal message
+ * @param {Function} onConfirm - Callback when confirmed
+ */
+function showConfirmModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirm-modal');
+    const modalTitle = modal.querySelector('.modal-title');
+    const modalMessage = modal.querySelector('.modal-message');
+    const cancelBtn = document.getElementById('modal-cancel');
+    const confirmBtn = document.getElementById('modal-confirm');
+
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modal.classList.add('active');
+
+    // Handle cancel
+    const handleCancel = () => {
+        modal.classList.remove('active');
+        cleanup();
+    };
+
+    // Handle confirm
+    const handleConfirm = () => {
+        modal.classList.remove('active');
+        cleanup();
+        onConfirm();
+    };
+
+    // Cleanup listeners
+    const cleanup = () => {
+        cancelBtn.removeEventListener('click', handleCancel);
+        confirmBtn.removeEventListener('click', handleConfirm);
+    };
+
+    cancelBtn.addEventListener('click', handleCancel);
+    confirmBtn.addEventListener('click', handleConfirm);
 }
 
 /**
