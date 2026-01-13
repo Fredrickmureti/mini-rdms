@@ -394,6 +394,126 @@ textarea {
 
 .console-section {
     border: 2px dashed var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.console-section.expanded {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999;
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.console-section.expanded .console {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.console-section.expanded .console textarea {
+    flex: 1;
+    min-height: 150px;
+    resize: none;
+}
+
+.console-section.expanded .sql-output {
+    flex: 2;
+    max-height: none;
+    overflow-y: auto;
+}
+
+/* Console overlay when expanded */
+.console-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.console-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.console-header h2 {
+    margin: 0;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.console-section.expanded .btn-icon {
+    background: var(--color-danger);
+    color: white;
+    border-color: var(--color-danger);
+}
+
+.console-section.expanded .expand-icon::before {
+    content: '✕';
+}
+
+.console-section.expanded .expand-icon {
+    font-size: 0;
+}
+
+.console-section.expanded .expand-icon::before {
+    font-size: 1rem;
+}
+
+.console-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-ghost:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
 }
 
 .console-description {
@@ -411,6 +531,8 @@ textarea {
 .console textarea {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: var(--font-size-sm);
+    min-height: 100px;
+    resize: vertical;
 }
 
 .sql-output {
@@ -421,7 +543,9 @@ textarea {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: var(--font-size-sm);
     overflow-x: auto;
-    min-height: 60px;
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
     white-space: pre;
     word-break: break-word;
     line-height: 1.4;

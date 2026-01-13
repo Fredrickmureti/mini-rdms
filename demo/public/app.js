@@ -62,13 +62,60 @@ function setupEventListeners() {
     const executeBtn = document.getElementById('execute-sql');
     executeBtn.addEventListener('click', handleExecuteSQL);
 
+    // Clear SQL button
+    const clearBtn = document.getElementById('clear-sql');
+    clearBtn.addEventListener('click', handleClearSQL);
+
+    // Toggle console expand/collapse
+    const toggleBtn = document.getElementById('toggle-console');
+    toggleBtn.addEventListener('click', toggleConsoleExpand);
+
+    // Console overlay click to collapse
+    const overlay = document.getElementById('console-overlay');
+    overlay.addEventListener('click', toggleConsoleExpand);
+
     // Allow Ctrl+Enter to execute SQL
     const sqlInput = document.getElementById('sql-input');
     sqlInput.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'Enter') {
             handleExecuteSQL();
         }
+        // Escape to collapse console
+        if (e.key === 'Escape') {
+            const consoleSection = document.getElementById('sql-console');
+            if (consoleSection.classList.contains('expanded')) {
+                toggleConsoleExpand();
+            }
+        }
     });
+}
+
+/**
+ * Toggles the SQL console between normal and expanded mode
+ */
+function toggleConsoleExpand() {
+    const consoleSection = document.getElementById('sql-console');
+    const overlay = document.getElementById('console-overlay');
+    const isExpanded = consoleSection.classList.toggle('expanded');
+    
+    if (isExpanded) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        // Focus the textarea when expanded
+        document.getElementById('sql-input').focus();
+    } else {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Clears the SQL input and output
+ */
+function handleClearSQL() {
+    document.getElementById('sql-input').value = '';
+    document.getElementById('sql-output').innerHTML = 'Results will appear here...';
+    document.getElementById('sql-input').focus();
 }
 
 // =========================================================================
