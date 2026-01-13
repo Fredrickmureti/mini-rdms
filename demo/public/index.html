@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Mini-RDBMS Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📋 Task Manager</h1>
+            <p class="subtitle">A demo application powered by Mini-RDBMS</p>
+        </header>
+
+        <!-- Add Task Form -->
+        <section class="card">
+            <h2>Add New Task</h2>
+            <form id="task-form" class="form">
+                <div class="form-group">
+                    <label for="task-title">Task Title</label>
+                    <input 
+                        type="text" 
+                        id="task-title" 
+                        placeholder="Enter task title..."
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Description</label>
+                    <textarea 
+                        id="task-description" 
+                        placeholder="Enter task description (optional)..."
+                        rows="3"
+                    ></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    ➕ Add Task
+                </button>
+            </form>
+        </section>
+
+        <!-- Filter Section -->
+        <section class="card filter-section">
+            <div class="filter-buttons">
+                <button class="btn filter-btn active" data-filter="all">
+                    All Tasks
+                </button>
+                <button class="btn filter-btn" data-filter="pending">
+                    📋 Pending
+                </button>
+                <button class="btn filter-btn" data-filter="completed">
+                    ✅ Completed
+                </button>
+            </div>
+            <div class="stats">
+                <span id="stats-total">0 total</span> • 
+                <span id="stats-completed">0 completed</span> • 
+                <span id="stats-pending">0 pending</span>
+            </div>
+        </section>
+
+        <!-- Task List -->
+        <section class="card">
+            <h2>Tasks</h2>
+            <div id="task-list" class="task-list">
+                <!-- Tasks will be rendered here -->
+                <p class="empty-message">Loading tasks...</p>
+            </div>
+        </section>
+
+        <!-- SQL Console (for learning/debugging) -->
+        <section class="card console-section">
+            <h2>🔧 SQL Console</h2>
+            <p class="console-description">
+                Execute raw SQL queries against the database to see how Mini-RDBMS works!
+            </p>
+            <div class="console">
+                <textarea 
+                    id="sql-input" 
+                    placeholder="Enter SQL query... e.g., SELECT * FROM tasks"
+                    rows="3"
+                ></textarea>
+                <button id="execute-sql" class="btn btn-secondary">
+                    ▶ Execute SQL
+                </button>
+            </div>
+            <pre id="sql-output" class="sql-output"></pre>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>
+                Built with ❤️ using 
+                <strong>Mini-RDBMS</strong> - 
+                A learning project for understanding database concepts
+            </p>
+            <p class="footer-links">
+                <a href="https://github.com" target="_blank">View Source</a> •
+                <a href="/api/tables" target="_blank">API Endpoint</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
