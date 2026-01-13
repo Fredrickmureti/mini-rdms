@@ -1,0 +1,392 @@
+# Mini-RDBMS 🗄️
+
+A **simple relational database management system** built from scratch in Node.js. This project is designed for **learning purposes**, demonstrating core database concepts like tables, columns, CRUD operations, indexing, constraints, and SQL parsing.
+
+---
+
+## 📚 Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Architecture](#architecture)
+- [Usage Guide](#usage-guide)
+- [SQL Syntax Reference](#sql-syntax-reference)
+- [API Reference](#api-reference)
+- [Demo Web App](#demo-web-app)
+- [Learning Path](#learning-path)
+
+---
+
+## 🎯 Overview
+
+This mini-RDBMS implements fundamental database concepts:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        MINI-RDBMS                           │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────┐    ┌─────────┐    ┌──────────────────────────┐ │
+│  │  REPL   │    │   API   │    │      Web Frontend        │ │
+│  │ (CLI)   │    │(Express)│    │        (Demo)            │ │
+│  └────┬────┘    └────┬────┘    └────────────┬─────────────┘ │
+│       │              │                      │               │
+│       └──────────────┼──────────────────────┘               │
+│                      ▼                                      │
+│            ┌─────────────────┐                              │
+│            │  Query Engine   │  ← Executes parsed queries   │
+│            └────────┬────────┘                              │
+│                     ▼                                       │
+│            ┌─────────────────┐                              │
+│            │   SQL Parser    │  ← Parses SQL-like syntax    │
+│            └────────┬────────┘                              │
+│                     ▼                                       │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │                    DATABASE                          │   │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐              │   │
+│  │  │ Table 1 │  │ Table 2 │  │ Table N │  ...         │   │
+│  │  │┌───────┐│  │┌───────┐│  │┌───────┐│              │   │
+│  │  ││Columns││  ││Columns││  ││Columns││              │   │
+│  │  ││ Rows  ││  ││ Rows  ││  ││ Rows  ││              │   │
+│  │  ││Index  ││  ││Index  ││  ││Index  ││              │   │
+│  │  │└───────┘│  │└───────┘│  │└───────┘│              │   │
+│  │  └─────────┘  └─────────┘  └─────────┘              │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ Features
+
+### Core Database Features
+- ✅ **Table Management** - CREATE, DROP tables
+- ✅ **Column Types** - INT, TEXT, BOOL
+- ✅ **Constraints** - PRIMARY KEY, NOT NULL, UNIQUE
+- ✅ **CRUD Operations** - INSERT, SELECT, UPDATE, DELETE
+- ✅ **Basic Indexing** - Hash-based indexes for fast lookups
+- ✅ **Joins** - INNER JOIN between tables
+
+### Interface Options
+- ✅ **Interactive REPL** - Command-line SQL interface
+- ✅ **REST API** - Express-based HTTP API
+- ✅ **Web Demo** - Simple task manager application
+
+---
+
+## 📁 Project Structure
+
+```
+mini-rdbms/
+│
+├── index.js                 # Main entry point
+├── package.json             # Project configuration
+├── README.md               # This file
+├── test.js                 # Test file
+│
+├── src/                    # Source code
+│   │
+│   ├── core/               # Core database components
+│   │   ├── Column.js       # Column definition & validation
+│   │   ├── Table.js        # Table with CRUD operations
+│   │   ├── Index.js        # Indexing for fast lookups
+│   │   └── Database.js     # Database container & joins
+│   │
+│   ├── parser/             # SQL parsing
+│   │   └── SQLParser.js    # Parse SQL strings to AST
+│   │
+│   ├── engine/             # Query execution
+│   │   └── QueryEngine.js  # Execute parsed queries
+│   │
+│   ├── repl/               # Interactive interface
+│   │   └── repl.js         # REPL implementation
+│   │
+│   └── server/             # Web API
+│       ├── app.js          # Express server
+│       └── routes/
+│           └── api.js      # API routes
+│
+├── demo/                   # Demo web application
+│   ├── seed.js            # Seed data for demo
+│   └── public/
+│       ├── index.html     # Frontend HTML
+│       ├── styles.css     # Styling
+│       └── app.js         # Frontend JavaScript
+│
+└── docs/                   # Additional documentation
+    └── LEARNING.md        # Learning guide
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js >= 14.0.0
+
+### Installation
+
+```bash
+# Clone or navigate to project
+cd mini-rdbms
+
+# Install dependencies
+npm install
+
+# Start the REPL
+npm run repl
+
+# Or start the web server
+npm run server
+
+# Or run the demo with sample data
+npm run demo
+```
+
+---
+
+## 🏗️ Architecture
+
+### 1. Core Layer (`src/core/`)
+
+The foundation of the database:
+
+| Component | Responsibility |
+|-----------|----------------|
+| **Column** | Defines column metadata (name, type, constraints) and validates data |
+| **Table** | Stores rows, enforces constraints, provides CRUD operations |
+| **Index** | Hash-based indexing for O(1) lookups on indexed columns |
+| **Database** | Container for tables, provides cross-table operations (joins) |
+
+### 2. Parser Layer (`src/parser/`)
+
+Converts SQL strings into structured objects (AST - Abstract Syntax Tree):
+
+```javascript
+// Input: "SELECT name, age FROM users WHERE age > 18"
+// Output:
+{
+  type: 'SELECT',
+  columns: ['name', 'age'],
+  table: 'users',
+  where: { column: 'age', operator: '>', value: 18 }
+}
+```
+
+### 3. Engine Layer (`src/engine/`)
+
+Executes parsed queries against the database:
+
+```javascript
+// Takes AST → Calls appropriate Database/Table methods → Returns results
+```
+
+### 4. Interface Layer (`src/repl/` & `src/server/`)
+
+Two ways to interact with the database:
+- **REPL**: Interactive command-line for direct SQL input
+- **Server**: REST API for programmatic access
+
+---
+
+## 📖 Usage Guide
+
+### REPL Mode
+
+```bash
+npm run repl
+```
+
+```sql
+mini-rdbms> CREATE TABLE users (id INT PRIMARY KEY, name TEXT NOT NULL, active BOOL);
+✓ Table 'users' created
+
+mini-rdbms> INSERT INTO users VALUES (1, 'Alice', true);
+✓ Inserted 1 row
+
+mini-rdbms> SELECT * FROM users;
+┌────┬───────┬────────┐
+│ id │ name  │ active │
+├────┼───────┼────────┤
+│ 1  │ Alice │ true   │
+└────┴───────┴────────┘
+
+mini-rdbms> .tables
+users
+
+mini-rdbms> .help
+Available commands...
+
+mini-rdbms> .exit
+Goodbye!
+```
+
+### Programmatic Usage
+
+```javascript
+const Database = require('./src/core/Database');
+const Table = require('./src/core/Table');
+const Column = require('./src/core/Column');
+
+// Create database
+const db = new Database();
+
+// Define columns
+const columns = [
+  new Column('id', 'INT', { primaryKey: true }),
+  new Column('name', 'TEXT', { notNull: true }),
+  new Column('email', 'TEXT', { unique: true })
+];
+
+// Create table
+const usersTable = new Table('users', columns);
+db.createTable('users', usersTable);
+
+// Insert data
+db.getTable('users').insert({ id: 1, name: 'Alice', email: 'alice@example.com' });
+
+// Query data
+const results = db.getTable('users').select(['name', 'email']);
+console.log(results);
+```
+
+---
+
+## 📝 SQL Syntax Reference
+
+### CREATE TABLE
+```sql
+CREATE TABLE table_name (
+  column1 TYPE [PRIMARY KEY] [NOT NULL] [UNIQUE],
+  column2 TYPE,
+  ...
+);
+```
+
+**Supported Types:** `INT`, `TEXT`, `BOOL`
+
+### INSERT
+```sql
+INSERT INTO table_name VALUES (value1, value2, ...);
+INSERT INTO table_name (col1, col2) VALUES (val1, val2);
+```
+
+### SELECT
+```sql
+SELECT * FROM table_name;
+SELECT col1, col2 FROM table_name;
+SELECT * FROM table_name WHERE column = value;
+SELECT * FROM table_name WHERE column > value;
+```
+
+### UPDATE
+```sql
+UPDATE table_name SET column = value WHERE condition;
+```
+
+### DELETE
+```sql
+DELETE FROM table_name WHERE condition;
+```
+
+### JOIN
+```sql
+SELECT * FROM table1 
+JOIN table2 ON table1.col = table2.col;
+```
+
+### DROP TABLE
+```sql
+DROP TABLE table_name;
+```
+
+---
+
+## 🌐 API Reference
+
+Base URL: `http://localhost:3000/api`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/tables` | List all tables |
+| POST | `/tables` | Create a new table |
+| DELETE | `/tables/:name` | Drop a table |
+| GET | `/tables/:name/rows` | Get all rows |
+| POST | `/tables/:name/rows` | Insert a row |
+| PUT | `/tables/:name/rows` | Update rows |
+| DELETE | `/tables/:name/rows` | Delete rows |
+| POST | `/query` | Execute raw SQL |
+
+### Example API Usage
+
+```bash
+# Create table
+curl -X POST http://localhost:3000/api/tables \
+  -H "Content-Type: application/json" \
+  -d '{"name": "users", "columns": [{"name": "id", "type": "INT", "primaryKey": true}]}'
+
+# Insert row
+curl -X POST http://localhost:3000/api/tables/users/rows \
+  -H "Content-Type: application/json" \
+  -d '{"id": 1, "name": "Alice"}'
+
+# Get rows
+curl http://localhost:3000/api/tables/users/rows
+```
+
+---
+
+## 🎮 Demo Web App
+
+A simple **Task Manager** demonstrating CRUD operations:
+
+```bash
+npm run demo
+# Open http://localhost:3000 in your browser
+```
+
+Features:
+- Add, view, edit, delete tasks
+- Mark tasks as complete
+- Filter by status
+
+---
+
+## 📚 Learning Path
+
+If you're using this project to learn, here's a suggested order:
+
+### Level 1: Core Concepts
+1. **Column.js** - Understand data types and validation
+2. **Table.js** - Learn how tables store and manage rows
+3. **Database.js** - See how tables are organized
+
+### Level 2: Advanced Features
+4. **Index.js** - Understand indexing for performance
+5. **Table.js (joins)** - Learn about joining tables
+
+### Level 3: Parsing & Execution
+6. **SQLParser.js** - See how SQL strings become structured data
+7. **QueryEngine.js** - Understand query execution
+
+### Level 4: Interfaces
+8. **repl.js** - Build interactive CLIs
+9. **app.js** - Build REST APIs
+
+---
+
+## 🤝 Contributing
+
+Feel free to extend this project! Some ideas:
+- Add more data types (FLOAT, DATE, etc.)
+- Implement more SQL features (ORDER BY, GROUP BY, LIMIT)
+- Add persistence (save to disk)
+- Implement transactions
+- Add more join types (LEFT, RIGHT, OUTER)
+
+---
+
+## 📄 License
+
+MIT License - Use freely for learning and projects!
