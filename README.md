@@ -43,15 +43,13 @@ This mini-RDBMS implements fundamental database concepts:
 │            └────────┬────────┘                              │
 │                     ▼                                       │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │                    DATABASE                          │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐              │   │
-│  │  │ Table 1 │  │ Table 2 │  │ Table N │  ...         │   │
-│  │  │┌───────┐│  │┌───────┐│  │┌───────┐│              │   │
-│  │  ││Columns││  ││Columns││  ││Columns││              │   │
-│  │  ││ Rows  ││  ││ Rows  ││  ││ Rows  ││              │   │
-│  │  ││Index  ││  ││Index  ││  ││Index  ││              │   │
-│  │  │└───────┘│  │└───────┘│  │└───────┘│              │   │
-│  │  └─────────┘  └─────────┘  └─────────┘              │   │
+│  │              DATABASE MANAGER                        │   │
+│  │  ┌────────────────────┐  ┌────────────────────┐      │   │
+│  │  │    Database 1      │  │    Database 2      │  ... │   │
+│  │  │  ┌───────┐┌──────┐ │  │  ┌───────┐┌──────┐ │      │   │
+│  │  │  │Table A││TableB│ │  │  │Table X││TableY│ │      │   │
+│  │  │  └───────┘└──────┘ │  │  └───────┘└──────┘ │      │   │
+│  │  └────────────────────┘  └────────────────────┘      │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -61,7 +59,8 @@ This mini-RDBMS implements fundamental database concepts:
 ## ✨ Features
 
 ### Core Database Features
-- ✅ **Table Management** - CREATE, DROP tables
+- ✅ **Database Management** - CREATE DATABASE, USE, DROP DATABASE
+- ✅ **Table Management** - CREATE TABLE, DROP TABLE
 - ✅ **Column Types** - INT, TEXT, BOOL
 - ✅ **Constraints** - PRIMARY KEY, NOT NULL, UNIQUE
 - ✅ **CRUD Operations** - INSERT, SELECT, UPDATE, DELETE
@@ -69,7 +68,7 @@ This mini-RDBMS implements fundamental database concepts:
 - ✅ **Joins** - INNER JOIN between tables
 
 ### Interface Options
-- ✅ **Interactive REPL** - Command-line SQL interface
+- ✅ **Interactive REPL** - Command-line SQL interface with database context
 - ✅ **REST API** - Express-based HTTP API
 - ✅ **Web Demo** - Simple task manager application
 
@@ -87,11 +86,13 @@ mini-rdbms/
 │
 ├── src/                    # Source code
 │   │
+│   ├── DatabaseManager.js  # Manages multiple databases
+│   ├── database.js         # Single database container
+│   │
 │   ├── core/               # Core database components
 │   │   ├── Column.js       # Column definition & validation
 │   │   ├── Table.js        # Table with CRUD operations
-│   │   ├── Index.js        # Indexing for fast lookups
-│   │   └── Database.js     # Database container & joins
+│   │   └── Index.js        # Indexing for fast lookups
 │   │
 │   ├── parser/             # SQL parsing
 │   │   └── SQLParser.js    # Parse SQL strings to AST
@@ -148,16 +149,17 @@ npm run demo
 
 ## 🏗️ Architecture
 
-### 1. Core Layer (`src/core/`)
+### 1. Core Layer (`src/`)
 
 The foundation of the database:
 
 | Component | Responsibility |
 |-----------|----------------|
+| **DatabaseManager** | Manages multiple databases, handles CREATE/USE/DROP DATABASE |
+| **Database** | Container for tables, provides cross-table operations (joins) |
 | **Column** | Defines column metadata (name, type, constraints) and validates data |
 | **Table** | Stores rows, enforces constraints, provides CRUD operations |
 | **Index** | Hash-based indexing for O(1) lookups on indexed columns |
-| **Database** | Container for tables, provides cross-table operations (joins) |
 
 ### 2. Parser Layer (`src/parser/`)
 
@@ -199,61 +201,110 @@ npm run repl
 ```
 
 ```sql
-mini-rdbms> CREATE TABLE users (id INT PRIMARY KEY, name TEXT NOT NULL, active BOOL);
+default> CREATE DATABASE myapp;
+✓ Database 'myapp' created successfully
+
+default> USE myapp;
+✓ Database changed to 'myapp'
+
+myapp> CREATE TABLE users (id INT PRIMARY KEY, name TEXT NOT NULL, active BOOL);
 ✓ Table 'users' created
 
-mini-rdbms> INSERT INTO users VALUES (1, 'Alice', true);
+myapp> INSERT INTO users VALUES (1, 'Alice', true);
 ✓ Inserted 1 row
 
-mini-rdbms> SELECT * FROM users;
+myapp> SELECT * FROM users;
 ┌────┬───────┬────────┐
 │ id │ name  │ active │
 ├────┼───────┼────────┤
 │ 1  │ Alice │ true   │
 └────┴───────┴────────┘
 
-mini-rdbms> .tables
-users
+myapp> SHOW DATABASES;
+┌────────────┐
+│ Database   │
+├────────────┤
+│ default    │
+│ myapp      │
+└────────────┘
 
-mini-rdbms> .help
+myapp> SHOW TABLES;
+┌────────┐
+│ Table  │
+├────────┤
+│ users  │
+└────────┘
+
+myapp> .databases
+→ myapp
+  default
+
+myapp> .help
 Available commands...
 
-mini-rdbms> .exit
+myapp> .exit
 Goodbye!
 ```
 
 ### Programmatic Usage
 
 ```javascript
-const Database = require('./src/core/Database');
-const Table = require('./src/core/Table');
-const Column = require('./src/core/Column');
+const { create, DatabaseManager, Database, Table, Column, QueryEngine } = require('mini-rdbms');
 
-// Create database
-const db = new Database();
+// Option 1: Using the factory function (recommended)
+const { manager, engine } = create('myapp');
 
-// Define columns
+// Execute SQL commands
+engine.execute('CREATE DATABASE blog');
+engine.execute('USE blog');
+engine.execute('CREATE TABLE posts (id INT PRIMARY KEY, title TEXT NOT NULL)');
+engine.execute("INSERT INTO posts VALUES (1, 'Hello World')");
+const results = engine.execute('SELECT * FROM posts');
+console.log(results.data);
+
+// Option 2: Using DatabaseManager directly
+const manager2 = new DatabaseManager();
+manager2.createDatabase('ecommerce');
+manager2.use('ecommerce');
+
+const engine2 = new QueryEngine(manager2);
+engine2.execute('CREATE TABLE products (id INT PRIMARY KEY, name TEXT)');
+
+// Option 3: Using Database directly (legacy, single database mode)
+const db = new Database('simple');
 const columns = [
   new Column('id', 'INT', { primaryKey: true }),
-  new Column('name', 'TEXT', { notNull: true }),
-  new Column('email', 'TEXT', { unique: true })
+  new Column('name', 'TEXT', { notNull: true })
 ];
-
-// Create table
 const usersTable = new Table('users', columns);
 db.createTable('users', usersTable);
-
-// Insert data
-db.getTable('users').insert({ id: 1, name: 'Alice', email: 'alice@example.com' });
-
-// Query data
-const results = db.getTable('users').select(['name', 'email']);
-console.log(results);
+db.getTable('users').insert({ id: 1, name: 'Alice' });
 ```
 
 ---
 
 ## 📝 SQL Syntax Reference
+
+### Database Commands
+
+```sql
+-- Create a new database
+CREATE DATABASE database_name;
+CREATE DATABASE IF NOT EXISTS database_name;
+
+-- Switch to a database
+USE database_name;
+
+-- Delete a database
+DROP DATABASE database_name;
+DROP DATABASE IF EXISTS database_name;
+
+-- List all databases
+SHOW DATABASES;
+
+-- List tables in current database
+SHOW TABLES;
+```
 
 ### CREATE TABLE
 ```sql
@@ -385,8 +436,4 @@ Feel free to extend this project! Some ideas:
 - Implement transactions
 - Add more join types (LEFT, RIGHT, OUTER)
 
----
 
-## 📄 License
-
-MIT License - Use freely for learning and projects!
