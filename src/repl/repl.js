@@ -226,8 +226,8 @@ class REPL {
      * @param {string} command - Dot command
      */
     _handleDotCommand(command) {
-        const parts = command.toLowerCase().split(/\s+/);
-        const cmd = parts[0];
+        const parts = command.split(/\s+/);
+        const cmd = parts[0].toLowerCase();
         const args = parts.slice(1);
 
         switch (cmd) {
@@ -238,6 +238,14 @@ class REPL {
             case '.databases':
             case '.dbs':
                 this._printDatabases();
+                break;
+
+            case '.use':
+                if (args[0]) {
+                    this._useDatabase(args[0]);
+                } else {
+                    console.log(`${colors.yellow}Usage: .use <database_name>${colors.reset}`);
+                }
                 break;
 
             case '.tables':
@@ -293,9 +301,16 @@ ${colors.cyan}╔═════════════════════
 ║   ${colors.bright}Mini-RDBMS${colors.reset}${colors.cyan} - A Simple Relational Database               ║
 ║                                                               ║
 ║   Type SQL commands or use dot commands:                      ║
-║   ${colors.yellow}.help${colors.cyan}     - Show available commands                       ║
-║   ${colors.yellow}.tables${colors.cyan}   - List all tables                              ║
-║   ${colors.yellow}.exit${colors.cyan}     - Exit the REPL                                ║
+║   ${colors.yellow}.help${colors.cyan}       - Show all available commands                 ║
+║   ${colors.yellow}.databases${colors.cyan}  - List all databases                          ║
+║   ${colors.yellow}.use <name>${colors.cyan} - Switch to a database                        ║
+║   ${colors.yellow}.tables${colors.cyan}     - List tables in current database             ║
+║   ${colors.yellow}.exit${colors.cyan}       - Exit the REPL                               ║
+║                                                               ║
+║   SQL Examples:                                               ║
+║   ${colors.yellow}CREATE DATABASE myapp;${colors.cyan}                                    ║
+║   ${colors.yellow}USE myapp;${colors.cyan}                                                ║
+║   ${colors.yellow}CREATE TABLE users (id INT PRIMARY KEY, name TEXT);${colors.cyan}      ║
 ║                                                               ║
 ╚═══════════════════════════════════════════════════════════════╝${colors.reset}
 `);
@@ -335,6 +350,7 @@ ${colors.bright}Constraints:${colors.reset}
 ${colors.bright}Dot Commands:${colors.reset}
   ${colors.cyan}.help${colors.reset}            - Show this help message
   ${colors.cyan}.databases${colors.reset}       - List all databases
+  ${colors.cyan}.use <name>${colors.reset}      - Switch to a database
   ${colors.cyan}.tables${colors.reset}          - List all tables in current database
   ${colors.cyan}.schema [table]${colors.reset}  - Show table schemas
   ${colors.cyan}.describe table${colors.reset}  - Describe a table's structure
@@ -396,6 +412,27 @@ ${colors.bright}Examples:${colors.reset}
             console.log(`${marker}${highlight}${db}${colors.reset}`);
         });
         console.log();
+    }
+
+    /**
+     * Switches to a database using the .use command
+     * @private
+     */
+    _useDatabase(dbName) {
+        try {
+            this.manager.use(dbName);
+            this.engine.database = this.manager.getCurrentDatabase();
+            this._updatePrompt();
+            console.log(`${colors.green}✓${colors.reset} Switched to database '${colors.cyan}${dbName}${colors.reset}'`);
+        } catch (error) {
+            console.log(`${colors.red}✗ Error:${colors.reset} ${error.message}`);
+            
+            // Show available databases as a hint
+            const databases = this.manager.listDatabases();
+            if (databases.length > 0) {
+                console.log(`${colors.dim}Available databases: ${databases.join(', ')}${colors.reset}`);
+            }
+        }
     }
 
     /**
