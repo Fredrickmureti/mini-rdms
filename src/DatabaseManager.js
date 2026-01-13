@@ -11,6 +11,7 @@
  * 1. Database Hierarchy: Server → Databases → Tables → Rows
  * 2. Context Switching: Using different databases
  * 3. Catalog Management: Tracking all databases
+ * 4. Persistence: Data survives restarts and is shared across processes
  * 
  * HIERARCHY VISUALIZATION:
  * ------------------------
@@ -58,6 +59,9 @@
  */
 
 const Database = require('./database');
+const Storage = require('./persistence/Storage');
+const Table = require('./core/Table');
+const Column = require('./core/Column');
 
 class DatabaseManager {
     /**
@@ -66,18 +70,25 @@ class DatabaseManager {
      * @param {Object} [options={}] - Configuration options
      * @param {string} [options.defaultDatabase='default'] - Name of default database to create
      * @param {boolean} [options.createDefault=true] - Whether to create a default database
+     * @param {boolean} [options.persist=true] - Whether to persist data to disk
+     * @param {string} [options.dataDir=null] - Custom data directory for persistence
      * 
      * @example
-     * // Create with default database
+     * // Create with default database and persistence
      * const manager = new DatabaseManager();
      * 
      * // Create without default database
      * const manager = new DatabaseManager({ createDefault: false });
+     * 
+     * // Create without persistence (in-memory only)
+     * const manager = new DatabaseManager({ persist: false });
      */
     constructor(options = {}) {
         const {
             defaultDatabase = 'default',
-            createDefault = true
+            createDefault = true,
+            persist = true,
+            dataDir = null
         } = options;
 
         /**
@@ -94,10 +105,97 @@ class DatabaseManager {
          */
         this.currentDatabaseName = null;
 
-        // Create a default database if requested
-        if (createDefault) {
+        /**
+         * Whether to persist changes to disk
+         * @type {boolean}
+         */
+        this.persistEnabled = persist;
+
+        /**
+         * Storage instance for persistence
+         * @type {Storage|null}
+         */
+        this.storage = persist ? new Storage(dataDir) : null;
+
+        // Try to load existing data from disk
+        if (persist && this.storage.hasData()) {
+            this._loadFromDisk();
+        } else if (createDefault) {
+            // Create a default database if requested and no data exists
             this.createDatabase(defaultDatabase);
             this.use(defaultDatabase);
+        }
+    }
+
+    // =========================================================================
+    // PERSISTENCE
+    // =========================================================================
+
+    /**
+     * Saves the current state to disk
+     * @private
+     */
+    _save() {
+        if (this.persistEnabled && this.storage) {
+            this.storage.save(this);
+        }
+    }
+
+    /**
+     * Loads state from disk
+     * @private
+     */
+    _loadFromDisk() {
+        const data = this.storage.load();
+        if (!data) return;
+
+        // Reconstruct databases from saved data
+        for (const [dbName, dbData] of Object.entries(data.databases || {})) {
+            const db = new Database(dbName);
+            
+            // Reconstruct tables
+            for (const [tableName, tableData] of Object.entries(dbData.tables || {})) {
+                const columns = tableData.columns.map(col => 
+                    new Column(col.name, col.type, {
+                        primaryKey: col.primaryKey,
+                        notNull: col.notNull,
+                        unique: col.unique
+                    })
+                );
+                const table = new Table(tableName, columns);
+                
+                // Add rows
+                for (const row of tableData.rows || []) {
+                    table.insert(row);
+                }
+                
+                db.createTable(tableName, table);
+            }
+            
+            this.databases[dbName] = db;
+        }
+
+        // Restore current database selection
+        if (data.currentDatabase && this.databases[data.currentDatabase]) {
+            this.currentDatabaseName = data.currentDatabase;
+        }
+    }
+
+    /**
+     * Forces a save to disk (useful for manual saves)
+     */
+    save() {
+        this._save();
+    }
+
+    /**
+     * Reloads data from disk (discards in-memory changes)
+     */
+    reload() {
+        if (this.persistEnabled && this.storage) {
+            this.databases = {};
+            this.currentDatabaseName = null;
+            this._loadFromDisk();
         }
     }
 
@@ -138,6 +236,9 @@ class DatabaseManager {
         // Create the new database
         const db = new Database(name);
         this.databases[name] = db;
+
+        // Save to disk
+        this._save();
 
         return db;
     }
@@ -241,6 +342,9 @@ class DatabaseManager {
         }
 
         delete this.databases[name];
+
+        // Save to disk
+        this._save();
     }
 
     /**

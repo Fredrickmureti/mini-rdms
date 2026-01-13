@@ -66,11 +66,13 @@ This mini-RDBMS implements fundamental database concepts:
 - ✅ **CRUD Operations** - INSERT, SELECT, UPDATE, DELETE
 - ✅ **Basic Indexing** - Hash-based indexes for fast lookups
 - ✅ **Joins** - INNER JOIN between tables
+- ✅ **Data Persistence** - JSON file-based storage, data survives restarts
 
 ### Interface Options
 - ✅ **Interactive REPL** - Command-line SQL interface with database context
 - ✅ **REST API** - Express-based HTTP API
 - ✅ **Web Demo** - Simple task manager application
+- ✅ **Shared State** - GUI and REPL share the same data via persistence
 
 ---
 
@@ -100,6 +102,9 @@ mini-rdbms/
 │   ├── engine/             # Query execution
 │   │   └── QueryEngine.js  # Execute parsed queries
 │   │
+│   ├── persistence/        # Data persistence
+│   │   └── Storage.js      # File-based data storage
+│   │
 │   ├── repl/               # Interactive interface
 │   │   └── repl.js         # REPL implementation
 │   │
@@ -107,6 +112,9 @@ mini-rdbms/
 │       ├── app.js          # Express server
 │       └── routes/
 │           └── api.js      # API routes
+│
+├── data/                   # Persisted database files (auto-created)
+│   └── databases.json     # All databases, tables, and rows
 │
 ├── demo/                   # Demo web application
 │   ├── seed.js            # Seed data for demo
@@ -444,7 +452,48 @@ Features:
 
 ---
 
-## 📚 Learning Path
+## � Data Persistence
+
+The Mini-RDBMS automatically persists all data to disk, allowing data to survive restarts and be shared between the GUI and REPL.
+
+### How It Works
+
+- All database state is saved to `data/databases.json`
+- Data is automatically saved after every modification (INSERT, UPDATE, DELETE, CREATE, DROP)
+- On startup, the system loads existing data from disk
+- Both the REPL and the server share the same data file
+
+### Storage Structure
+
+```
+data/
+└── databases.json     <- All databases, tables, and rows
+```
+
+### Configuration Options
+
+```javascript
+// Default: persistence enabled
+const manager = new DatabaseManager();
+
+// Disable persistence (in-memory only)
+const manager = new DatabaseManager({ persist: false });
+
+// Custom data directory
+const manager = new DatabaseManager({ dataDir: './custom-path' });
+```
+
+### Workflow Example
+
+1. Create a database and table via the Web GUI
+2. Insert data through the SQL console
+3. Stop the server
+4. Start the REPL - your data is still there!
+5. Query the data from the terminal
+
+---
+
+## �📚 Learning Path
 
 If you're using this project to learn, here's a suggested order:
 

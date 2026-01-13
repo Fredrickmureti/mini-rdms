@@ -28,6 +28,9 @@ coverage/
 dist/
 build/
 
+# Database persistence data
+data/
+
 # Environment
 .env
 .env.local

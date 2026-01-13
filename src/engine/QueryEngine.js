@@ -86,6 +86,21 @@ class QueryEngine {
     }
 
     // =========================================================================
+    // PERSISTENCE
+    // =========================================================================
+
+    /**
+     * Saves database state to disk if persistence is enabled
+     * Called automatically after data-modifying operations
+     * @private
+     */
+    _saveIfNeeded() {
+        if (this.manager && this.manager.persistEnabled) {
+            this.manager.save();
+        }
+    }
+
+    // =========================================================================
     // MAIN EXECUTION METHODS
     // =========================================================================
 
@@ -345,6 +360,9 @@ class QueryEngine {
         // Insert the row
         const insertedRow = table.insert(rowData);
 
+        // Auto-save after modification
+        this._saveIfNeeded();
+
         return {
             success: true,
             data: insertedRow,
@@ -376,6 +394,9 @@ class QueryEngine {
         // Execute update
         const rowsAffected = table.update(ast.set, ast.where);
 
+        // Auto-save after modification
+        this._saveIfNeeded();
+
         return {
             success: true,
             data: null,
@@ -406,6 +427,9 @@ class QueryEngine {
 
         // Execute delete
         const rowsAffected = table.delete(ast.where);
+
+        // Auto-save after modification
+        this._saveIfNeeded();
 
         return {
             success: true,
@@ -444,6 +468,9 @@ class QueryEngine {
         // Add to database
         this.database.createTable(ast.table, table);
 
+        // Auto-save after modification
+        this._saveIfNeeded();
+
         return {
             success: true,
             data: null,
@@ -467,6 +494,9 @@ class QueryEngine {
         this._requireDatabase();
 
         this.database.dropTable(ast.table);
+
+        // Auto-save after modification
+        this._saveIfNeeded();
 
         return {
             success: true,

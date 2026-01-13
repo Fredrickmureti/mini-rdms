@@ -332,8 +332,8 @@ console.log('─'.repeat(50));
 
 const DatabaseManager = require('./src/DatabaseManager');
 
-// Test DatabaseManager creation
-const manager = new DatabaseManager({ createDefault: false });
+// Test DatabaseManager creation (disable persistence for tests)
+const manager = new DatabaseManager({ createDefault: false, persist: false });
 assert(manager.listDatabases().length === 0, 'Empty manager has no databases');
 assert(manager.getCurrentDatabase() === null, 'No current database initially');
 
@@ -387,7 +387,7 @@ assert(Array.isArray(stats.databases), 'getStats returns databases array');
 console.log('\n📋 DATABASE SQL COMMANDS TESTS');
 console.log('─'.repeat(50));
 
-const manager2 = new DatabaseManager({ createDefault: false });
+const manager2 = new DatabaseManager({ createDefault: false, persist: false });
 const engine2 = new QueryEngine(manager2);
 
 // Test CREATE DATABASE via SQL
@@ -443,7 +443,7 @@ result = engine2.execute('DROP DATABASE IF EXISTS nonexistent');
 assert(result.success === true, 'DROP DATABASE IF EXISTS succeeds for nonexistent');
 
 // Test error when no database selected
-const manager3 = new DatabaseManager({ createDefault: false });
+const manager3 = new DatabaseManager({ createDefault: false, persist: false });
 const engine3 = new QueryEngine(manager3);
 engine3.execute('CREATE DATABASE testdb');
 // Don't USE, try to CREATE TABLE
