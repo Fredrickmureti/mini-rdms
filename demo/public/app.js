@@ -272,7 +272,7 @@ async function handleExecuteSQL() {
     const sql = sqlInput.value.trim();
 
     if (!sql) {
-        sqlOutput.textContent = 'Please enter a SQL query';
+        sqlOutput.innerHTML = '<span class="sql-error">Please enter a SQL query</span>';
         return;
     }
 
@@ -285,18 +285,146 @@ async function handleExecuteSQL() {
 
         const result = await response.json();
 
-        // Pretty print the result
-        sqlOutput.textContent = JSON.stringify(result, null, 2);
+        // Format the result in MySQL-style output
+        sqlOutput.innerHTML = formatSQLResult(sql, result);
 
         // Reload tasks in case the query modified data
-        if (result.success && sql.toUpperCase().match(/^(INSERT|UPDATE|DELETE)/)) {
+        if (result.success && sql.toUpperCase().match(/^(INSERT|UPDATE|DELETE|CREATE|DROP)/)) {
             await loadTasks();
         }
 
     } catch (error) {
         console.error('❌ SQL execution failed:', error);
-        sqlOutput.textContent = `Error: ${error.message}`;
+        sqlOutput.innerHTML = `<span class="sql-error">ERROR: ${error.message}</span>`;
     }
+}
+
+/**
+ * Formats SQL result in MySQL-style output
+ */
+function formatSQLResult(sql, result) {
+    if (!result.success) {
+        return `<span class="sql-error">ERROR: ${result.error}</span>`;
+    }
+
+    const command = sql.trim().split(/\s+/)[0].toUpperCase();
+    let output = '';
+
+    switch (command) {
+        case 'SELECT':
+        case 'SHOW':
+            output = formatTableResult(result.data, result.message);
+            break;
+
+        case 'INSERT':
+            output = formatSuccessMessage(`Query OK, 1 row affected`, result);
+            break;
+
+        case 'UPDATE':
+            output = formatSuccessMessage(`Query OK, ${result.rowsAffected} row(s) affected`, result);
+            break;
+
+        case 'DELETE':
+            output = formatSuccessMessage(`Query OK, ${result.rowsAffected} row(s) deleted`, result);
+            break;
+
+        case 'CREATE':
+            if (sql.toUpperCase().includes('DATABASE')) {
+                output = formatSuccessMessage(`Database created successfully`, result);
+            } else {
+                output = formatSuccessMessage(`Table created successfully`, result);
+            }
+            break;
+
+        case 'DROP':
+            if (sql.toUpperCase().includes('DATABASE')) {
+                output = formatSuccessMessage(`Database dropped successfully`, result);
+            } else {
+                output = formatSuccessMessage(`Table dropped successfully`, result);
+            }
+            break;
+
+        case 'USE':
+            output = formatSuccessMessage(`Database changed`, result);
+            break;
+
+        default:
+            output = formatSuccessMessage(result.message || 'Query executed successfully', result);
+    }
+
+    return output;
+}
+
+/**
+ * Formats a table result (for SELECT/SHOW queries)
+ */
+function formatTableResult(data, message) {
+    if (!data || data.length === 0) {
+        return `<div class="sql-message">Empty set (0 rows)</div>`;
+    }
+
+    // Get column names from first row
+    const columns = Object.keys(data[0]);
+
+    // Calculate column widths
+    const widths = {};
+    columns.forEach(col => {
+        widths[col] = col.length;
+        data.forEach(row => {
+            const val = formatCellValue(row[col]);
+            widths[col] = Math.max(widths[col], val.length);
+        });
+    });
+
+    // Build the table
+    let table = '<div class="sql-table">';
+
+    // Header separator
+    const separator = '+' + columns.map(col => '-'.repeat(widths[col] + 2)).join('+') + '+';
+
+    // Header row
+    const headerRow = '|' + columns.map(col => ` ${col.padEnd(widths[col])} `).join('|') + '|';
+
+    table += `<div class="sql-row sql-separator">${separator}</div>`;
+    table += `<div class="sql-row sql-header">${headerRow}</div>`;
+    table += `<div class="sql-row sql-separator">${separator}</div>`;
+
+    // Data rows
+    data.forEach(row => {
+        const dataRow = '|' + columns.map(col => {
+            const val = formatCellValue(row[col]);
+            return ` ${val.padEnd(widths[col])} `;
+        }).join('|') + '|';
+        table += `<div class="sql-row">${dataRow}</div>`;
+    });
+
+    table += `<div class="sql-row sql-separator">${separator}</div>`;
+    table += '</div>';
+
+    // Row count
+    table += `<div class="sql-message">${data.length} row(s) in set</div>`;
+
+    return table;
+}
+
+/**
+ * Formats a cell value for display
+ */
+function formatCellValue(value) {
+    if (value === null || value === undefined) {
+        return 'NULL';
+    }
+    if (typeof value === 'boolean') {
+        return value ? 'true' : 'false';
+    }
+    return String(value);
+}
+
+/**
+ * Formats a success message
+ */
+function formatSuccessMessage(message, result) {
+    return `<div class="sql-success">✓ ${message}</div>`;
 }
 
 // =========================================================================
