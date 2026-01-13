@@ -265,38 +265,117 @@ function handleFilterChange(button) {
 
 /**
  * Handles executing SQL from the console
+ * Supports multiple statements separated by semicolons
  */
 async function handleExecuteSQL() {
     const sqlInput = document.getElementById('sql-input');
     const sqlOutput = document.getElementById('sql-output');
-    const sql = sqlInput.value.trim();
+    const sqlText = sqlInput.value.trim();
 
-    if (!sql) {
+    if (!sqlText) {
         sqlOutput.innerHTML = '<span class="sql-error">Please enter a SQL query</span>';
         return;
     }
 
-    try {
-        const response = await fetch(`${API_URL}/query`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sql })
-        });
+    // Split multiple statements by semicolon (but not inside quotes)
+    const statements = splitSQLStatements(sqlText);
+    
+    if (statements.length === 0) {
+        sqlOutput.innerHTML = '<span class="sql-error">Please enter a SQL query</span>';
+        return;
+    }
 
-        const result = await response.json();
+    let allOutput = '';
+    let shouldReloadTasks = false;
 
-        // Format the result in MySQL-style output
-        sqlOutput.innerHTML = formatSQLResult(sql, result);
+    for (const sql of statements) {
+        if (!sql.trim()) continue;
 
-        // Reload tasks in case the query modified data
-        if (result.success && sql.toUpperCase().match(/^(INSERT|UPDATE|DELETE|CREATE|DROP)/)) {
-            await loadTasks();
+        try {
+            // Show the command being executed
+            allOutput += `<div class="sql-command">mysql&gt; ${escapeHtml(sql)}</div>`;
+
+            const response = await fetch(`${API_URL}/query`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sql })
+            });
+
+            const result = await response.json();
+
+            // Format the result in MySQL-style output
+            allOutput += formatSQLResult(sql, result);
+            allOutput += '<div class="sql-spacing"></div>';
+
+            // Check if we need to reload tasks
+            if (result.success && sql.toUpperCase().match(/^(INSERT|UPDATE|DELETE|CREATE|DROP)/)) {
+                shouldReloadTasks = true;
+            }
+
+        } catch (error) {
+            console.error('❌ SQL execution failed:', error);
+            allOutput += `<span class="sql-error">ERROR: ${error.message}</span>`;
+            allOutput += '<div class="sql-spacing"></div>';
+        }
+    }
+
+    sqlOutput.innerHTML = allOutput;
+
+    // Reload tasks if any data-modifying query was executed
+    if (shouldReloadTasks) {
+        await loadTasks();
+    }
+}
+
+/**
+ * Splits SQL text into individual statements
+ * Handles semicolons inside quoted strings correctly
+ */
+function splitSQLStatements(sqlText) {
+    const statements = [];
+    let current = '';
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+
+    for (let i = 0; i < sqlText.length; i++) {
+        const char = sqlText[i];
+        const prevChar = i > 0 ? sqlText[i - 1] : '';
+
+        // Track quote state (ignore escaped quotes)
+        if (char === "'" && prevChar !== '\\' && !inDoubleQuote) {
+            inSingleQuote = !inSingleQuote;
+        } else if (char === '"' && prevChar !== '\\' && !inSingleQuote) {
+            inDoubleQuote = !inDoubleQuote;
         }
 
-    } catch (error) {
-        console.error('❌ SQL execution failed:', error);
-        sqlOutput.innerHTML = `<span class="sql-error">ERROR: ${error.message}</span>`;
+        // Split on semicolon only if not inside quotes
+        if (char === ';' && !inSingleQuote && !inDoubleQuote) {
+            const stmt = current.trim();
+            if (stmt) {
+                statements.push(stmt);
+            }
+            current = '';
+        } else {
+            current += char;
+        }
     }
+
+    // Add the last statement if it doesn't end with semicolon
+    const lastStmt = current.trim();
+    if (lastStmt) {
+        statements.push(lastStmt);
+    }
+
+    return statements;
+}
+
+/**
+ * Escapes HTML special characters
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /**
